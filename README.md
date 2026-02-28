@@ -28,6 +28,10 @@ export PS1="\[\033[01;32m\]\u@\h:\w\n\[\033[00m\]\$ "
 
 ```
 ## Installation 
+```bash
+$ pip install -r requirements.txt
+
+```
 ### Setup the environment Variables
 ``` bash
 $ cp .env.example .env
