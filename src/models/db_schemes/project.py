@@ -27,7 +27,7 @@ class Project(BaseModel):
                 "key":[
                     ("project_id", 1)
                 ],
-                "name": "project_od_index_1",
+                "name": "project_id_index_1",
                 "unique": True
             }
         ]
