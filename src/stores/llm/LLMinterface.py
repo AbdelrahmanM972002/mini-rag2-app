@@ -1,27 +1,27 @@
-from abc import ABC, abstractmethed
+from abc import ABC, abstractmethod
 
 class LLMInterface(ABC):
     
     
-    @abstractmethed
+    @abstractmethod
     def set_generation_model(self, model_id: str):
         pass
     
     
-    @abstractmethed
+    @abstractmethod
     def set_embedding_model(self, model_id: str, embedding_size:int):
         pass
     
-    @abstractmethed
+    @abstractmethod
     def generate_text(self, prompt: str, chat_history: list = [], max_output_tokens: int =None, temperature: float=None):
         pass 
     
     
-    @abstractmethed
+    @abstractmethod
     def embed_text(self, text:str, document_type: str = None):
         pass
     
-    @abstractmethed
+    @abstractmethod
     def construct_prompt(self, prompt: str, role: str):
         pass
     
