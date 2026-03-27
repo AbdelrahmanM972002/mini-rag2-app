@@ -1,6 +1,6 @@
 from ..LLMInterface import LLMInterface
 from openai import OpenAI 
-import logginig
+import logging
 from ..LLMEnums import OpenAIEnums
 class OpenAIProvider(LLMInterface):
     
@@ -26,7 +26,7 @@ class OpenAIProvider(LLMInterface):
             api_url = self.api_url
         )
         
-        self.logger = logginig.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)
         
         
     def set_generation_model(self, model_id: str):
@@ -66,7 +66,7 @@ class OpenAIProvider(LLMInterface):
         )
             
         if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
-            self.logger("Error while generating text with OpenAI")
+            self.logger.error("Error while generating text with OpenAI")
             return None
             
         return response.choices[0].message['content']
@@ -74,7 +74,7 @@ class OpenAIProvider(LLMInterface):
             
             
         
-    def embed_text(self, text:str, document_type: str = None):
+    def embed_text(self, text:str, document_type: str = None): 
             
         if not self.client:
             self.logger.error("OpenAI client was not set")
@@ -84,9 +84,9 @@ class OpenAIProvider(LLMInterface):
             self.logger.error("Embedding model for OpenAI was not set")
             return None
             
-        response = self.client.Embedding.create(
+        response = self.client.embeddings.create(
             model = self.embedding_model_id,
-            input = text
+            input = text 
         )
             
         if not response or not response.data or len(response.data) == 0 or not response.data[0].embedding:
@@ -96,12 +96,11 @@ class OpenAIProvider(LLMInterface):
         return response.data[0].embedding
         
     def construct_prompt(self, prompt: str, role: str):
-            
-        return {
-                "role": role,
-                "content": self.process_text(prompt)
-        }
         
+        return {
+            "role": role,
+            "text": self.process_text(prompt)
+        }
                 
         
             
