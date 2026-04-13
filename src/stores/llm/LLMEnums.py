@@ -12,14 +12,13 @@ class OpenAIEnums(Enum):
     USER = "user"
     ASSISTANT = "assistant"
     
-
 class CoHereEnums(Enum):
+    # Fixed: Use lowercase for roles to match Cohere V2 requirements
+    SYSTEM = "system" 
+    USER = "user"
+    ASSISTANT = "chatbot" # Cohere uses 'chatbot' as the assistant role
     
-    SYSTEM = "SYSTEM"
-    USER = "USER"
-    ASSISTANT = "CHATBOT"
-    
-    DOCUMENT ="search_document"
+    DOCUMENT = "search_document"
     QUERY = "search_query"
     
 class DocumentTypesEnums(Enum):

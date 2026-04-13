@@ -3,6 +3,8 @@ from logging import getLogger
 from ..VectoreDBEnums import DistanceMethodEnums
 from qdrant_client import models, QdrantClient
 from typing import List
+import uuid
+from models.db_schemes import RetrievedDocument
 class QdrantDBProvider(VectorDBIterface):
     
     def __init__(self, db_path: str, distance_method:str):
@@ -12,15 +14,18 @@ class QdrantDBProvider(VectorDBIterface):
         self.distance_method = None
         
         if distance_method == DistanceMethodEnums.COSINE.value:
-            self.distance_method == models.Distance.COSINE
+            self.distance_method = models.Distance.COSINE
         elif distance_method == DistanceMethodEnums.DOT.value:
-            self.distance_method == models.Distance.Dot
+            self.distance_method = models.Distance.DOT
             
         self.logger = getLogger(__name__)
         
     
     def connect(self):
         self.client = QdrantClient(path=self.db_path)
+    
+    def disconnect(self):
+        self.client = None
         
     def is_collection_existed(self, collection_name: str) -> bool:
         return self.client.collection_exists(collection_name=collection_name)
@@ -40,10 +45,10 @@ class QdrantDBProvider(VectorDBIterface):
         if do_reset:
             _= self.delete_collection(collection_name=collection_name)
         
-        if not self.list_all_collections(collection_name):
+        if not self.is_collection_existed(collection_name):
             _= self.client.create_collection(
                 collection_name=collection_name,
-                vectors_cofig = models.VectorParams(
+                vectors_config = models.VectorParams(
                     size = embedding_size,
                     distance= self.distance_method
                 )
@@ -73,50 +78,86 @@ class QdrantDBProvider(VectorDBIterface):
             return False
         return True
     
-    def insert_many(self, collection_name:list, texts:list, vectors: list, metadata: 
-                    list =None, record_ids: list =None,
-                    batch_size: int =50):
+    def insert_many(self, collection_name: str, texts: list, vectors: list, 
+                    metadata: list = None, record_ids: list = None,
+                    batch_size: int = 50):
         
-        if metadata is  None:
+       
+        if metadata is None:
             metadata = [None] * len(texts)
+        
+       
         if record_ids is None:
-            record_ids = [None] * len(texts)
+            record_ids = [str(uuid.uuid4()) for _ in range(len(texts))]
         
         for i in range(0, len(texts), batch_size):
             batch_end = i + batch_size
             
+    
             batch_texts = texts[i: batch_end]
             batch_metadata = metadata[i: batch_end]
             batch_vectors = vectors[i: batch_end]
+            batch_record_ids = record_ids[i: batch_end]
             
-            batch_records = [
-                
-                models.Record(
-                    vector = batch_vectors[x],
+           
+            batch_points = [
+                models.PointStruct(
+                    id=batch_record_ids[x],
+                    vector=batch_vectors[x],
                     payload={
-                        "text": batch_texts[x], "metadata": batch_metadata[x]
+                        "text": batch_texts[x], 
+                        "metadata": batch_metadata[x] or {}
                     }
                 )
-                
                 for x in range(len(batch_texts))
             ]
+            
             try:
-                _= self.client.upload_records(
+                
+                self.client.upload_points(
                     collection_name=collection_name,
-                    records = batch_records
+                    points=batch_points 
                 )
             except Exception as e:
-                self.logger.error(f"Error while inserting batch {e}")
+                self.logger.error(f"Error while inserting batch: {e}")
                 return False
+                
         return True
     
-    def search_by_vector(self, collection_name: str, vector: list, limit: int= 6):
-        
-        return self.client.search(
-            collection_name=collection_name,
-            query_vector = vector,
-            limit = limit
-        )
-        
+    def search_by_vector(self, collection_name: str, vector: list, limit: int = 6):
+        # if self.client is None:
+        #     self.connect()
+
+        # try:
             
+        #     response = self.client.query_points(
+        #         collection_name=collection_name,
+        #         query=vector,
+        #         limit=limit
+        #     )
+        #     return response.points
+        # except Exception as e:
+        #     self.logger.warning(f"Fallback to traditional search due to: {e}")
+        #     return self.client.search(
+        #         collection_name=collection_name,
+        #         query_vector=vector,
+        #         limit=limit
+        #     )
+        
+        results = self.client.query_points(
+            collection_name=collection_name,
+             query=vector,
+             limit=limit
+        )
+        if not results or not results.points:
+            return None
+
+        return [
+            RetrievedDocument(
+                id_document=str(result.id),
+                score=result.score,
+                text=result.payload.get("text", "")
+            )
+            for result in results.points
+        ]
             
