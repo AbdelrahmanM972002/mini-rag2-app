@@ -1,16 +1,16 @@
-from ..LLMInterface import LLMInterface
+from stores.llm.LLMinterface import LLMInterface
 from openai import OpenAI 
 import logging
 from ..LLMEnums import OpenAIEnums
 class OpenAIProvider(LLMInterface):
     
-    def __init__(self, api_key: str, api_url: str=None,
+    def __init__(self, api_key: str, base_url:str,
                  default_input_max_characters: int=1000, 
                  default_generation_max_output_tokens: int=1000,
                  default_generation_temperature: float=0.1):
         
         self.api_key = api_key
-        self.api_url = api_url
+        self.base_url = base_url
         self.default_input_max_characters = default_input_max_characters
         self.default_generation_max_output_tokens = default_generation_max_output_tokens
         self.default_generation_temperature = default_generation_temperature
@@ -23,11 +23,11 @@ class OpenAIProvider(LLMInterface):
         
         self.client = OpenAI(
             api_key = self.api_key,
-            api_url = self.api_url
+            base_url = self.base_url if self.base_url and len(self.base_url) else None
         )
         
         self.logger = logging.getLogger(__name__)
-        
+        self.enums = OpenAIEnums
         
     def set_generation_model(self, model_id: str):
         self.generation_model_id = model_id
@@ -69,7 +69,7 @@ class OpenAIProvider(LLMInterface):
             self.logger.error("Error while generating text with OpenAI")
             return None
             
-        return response.choices[0].message['content']
+        return response.choices[0].message.content
         
             
             

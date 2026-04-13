@@ -1,36 +1,48 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
     
+    # --- Application Information ---
     APP_NAME: str
     APP_VERSION: str
-    OPENAI_API_KEY: str
-    FILE_ALLOWED_TYPES: list[str]
+    
+    # --- File and Database Configurations ---
+    FILE_ALLOWED_TYPES: List[str]
     FILE_MAX_SIZE: int
-    FILE_DEFAULT_CHUNK_SIZE:int
-    MONGODB_URL : str
+    FILE_DEFAULT_CHUNK_SIZE: int
+    MONGODB_URL: str
     MONGODB_DATABASE: str
     
-    GENERATION_BACKEND : str
-    EMBEDDING_BACKEND : str
+    # --- AI Backends Selection ---
+    GENERATION_BACKEND: str
+    EMBEDDING_BACKEND: str
+    VECTOR_DB_BACKEND: str
+    VECTOR_DB_PATH: str
 
-    OPENAI_API_KEY : str = None
-    OPENAI_API_URL : str = None
-    COHERE_API_KEY : str = None
+    # --- API Keys and Model IDs (Optional to avoid startup errors) ---
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_API_URL: Optional[str] = None
+    COHERE_API_KEY: Optional[str] = None
 
-    GENERATION_MODEL_ID : str = None
-    EMBEDDING_MODEL_ID : str = None
-    EMBEDDING_MODEL_SIZE : int = None
+    GENERATION_MODEL_ID: Optional[str] = None
+    EMBEDDING_MODEL_ID: Optional[str] = None
+    EMBEDDING_MODEL_SIZE: Optional[int] = None
 
-    INPUT_DAFULT_MAX_CHARACTERS : int = None
-    GENERATION_DAFAULT_MAX_TOKENS : int  = None
-    GENERATION_DAFAULT_TEMPERATURE : float  = None
+    # --- Parameters with custom spelling (keeping current naming convention) ---
+    INPUT_DAFULT_MAX_CHARACTERS: Optional[int] = 1000
+    GENERATION_DAFAULT_MAX_TOKENS: Optional[int] = 500
+    GENERATION_DAFAULT_TEMPERATURE: Optional[float] = 0.5
     
-    VECTOR_DB_BACKEND : str
-    VECTOR_DB_PATH = str
-    VECTOR_DB_DISTANCE_METHOD = str = None
+    # --- Vector Database Configurations ---
+    VECTOR_DB_DISTANCE_METHOD: Optional[str] = "cosine"
 
+    # --- Language Settings ---
+    DEFAULT_LANGUAGE: str = "en"
+    PRIMARY_LANGUAGE: str = "en"
+
+    # --- Pydantic Configuration to read from .env file ---
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
@@ -38,4 +50,5 @@ class Settings(BaseSettings):
 
 
 def get_settings():
+    """Returns an instance of the Settings class."""
     return Settings()
