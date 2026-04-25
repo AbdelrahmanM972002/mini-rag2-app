@@ -25,7 +25,7 @@ data_router = APIRouter(
 )
 
 # =========================
-# ✅ Upload Endpoint
+#  Upload Endpoint
 # =========================
 @data_router.post("/upload/{project_id}")
 async def upload_data(request: Request, project_id: str, file: UploadFile,
@@ -92,7 +92,7 @@ async def upload_data(request: Request, project_id: str, file: UploadFile,
 
 
 # =========================
-# ✅ Process Endpoint
+#  Process Endpoint
 # =========================
 @data_router.post("/process/{project_id}")
 async def process_endpoint(request: Request, project_id: str, process_request: ProcessRequest):
@@ -116,7 +116,7 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
     project_files_ids = {}
 
     # =========================
-    # ✅ Get specific file by ID
+    #  Get specific file by ID
     # =========================
     if process_request.file_id:
 
@@ -140,7 +140,7 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
         }
 
     # =========================
-    # ✅ Get all files
+    #  Get all files
     # =========================
     else:
         project_files = await asset_model.get_all_project_assets(
@@ -177,7 +177,7 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
         )
 
     # =========================
-    # ✅ Process files
+    #  Process files
     # =========================
     for asset_id, file_id in project_files_ids.items():
 

@@ -16,7 +16,7 @@ nlp_router = APIRouter(
 )
 
 # =====================================
-# 📌 PUSH / INDEX
+#  PUSH / INDEX
 # =====================================
 @nlp_router.post("/index/push/{project_id}")
 async def index_project(request: Request, project_id: str, push_request: PushRequest):
@@ -68,13 +68,13 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
                 document_type="document"
             )
 
-            # ✅ FIX: None check
+            #  FIX: None check
             if vec is None:
-                raise ValueError(f"❌ Embedding failed at chunk {i}")
+                raise ValueError(f" Embedding failed at chunk {i}")
 
             vectors.append(vec)
 
-        # 🔥 create collection ONCE
+        #  create collection ONCE
         if not collection_created:
             embedding_size = len(vectors[0])
 
@@ -114,7 +114,7 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
 
 
 # =====================================
-# 📌 INDEX INFO
+#  INDEX INFO
 # =====================================
 @nlp_router.get("/index/info/{project_id}")
 async def get_project_index_info(request: Request, project_id: str):
@@ -174,7 +174,7 @@ async def get_project_index_info(request: Request, project_id: str):
 
 
 # =====================================
-# 📌 SEARCH
+#  SEARCH
 # =====================================
 @nlp_router.post("/index/search/{project_id}")
 async def search_index(request: Request, project_id: str, search_request: SearchRequest):
@@ -195,7 +195,7 @@ async def search_index(request: Request, project_id: str, search_request: Search
         template_parser=request.app.template_parser,
     )
 
-    # 🔥 FIX: return [] instead of False
+    #  FIX: return [] instead of False
     results = nlp_controller.sreach_vector_db_collection(
         project=project,
         text=search_request.text,
@@ -217,7 +217,7 @@ async def search_index(request: Request, project_id: str, search_request: Search
 
 
 # =====================================
-# 📌 RAG ANSWER
+#  RAG ANSWER
 # =====================================
 @nlp_router.post("/index/answer/{project_id}")
 async def answer_rag(request: Request, project_id: str, search_request: SearchRequest):
@@ -250,13 +250,13 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
             content={"signal": ResponseSignal.RAG_ANSWER_ERROR.value}
         )
 
-    # ✅ SAFE extraction
+    
     if hasattr(answer, "choices"):
         final_answer = answer.choices[0].message.content
     else:
         final_answer = answer
 
-    # 🔥 clean quotes if model or serializer added them
+   
     if isinstance(final_answer, str):
         final_answer = final_answer.strip().strip('"').strip("'")
 
