@@ -35,7 +35,7 @@ class NLPController(BaseController):
         return json.loads(json.dumps(collection_info, default=lambda x: x.__dict__))
 
     # =========================================
-    # 🔥 INDEXING
+    #  INDEXING
     # =========================================
     def index_into_vector_db(self, project, chunks, chunks_ids, do_reset=False):
 
@@ -78,7 +78,7 @@ class NLPController(BaseController):
         )
 
     # =========================================
-    # 🔍 SEARCH
+    #  SEARCH
     # =========================================
     def sreach_vector_db_collection(self, project: Project, text: str, limit: int = 4):
 
@@ -104,17 +104,17 @@ class NLPController(BaseController):
         return results or False
 
     # =========================================
-    # 🧠 RAG
+    #  RAG
     # =========================================
     def answer_rag_question(self, project: Project, query: str, limit: int = 5):
 
         answer, full_prompt, chat_history = None, None, None
 
-        # 🔹 1. Retrieval (نزود شوية علشان نفلتر بعد كده)
+        
         retrieved_documents = self.sreach_vector_db_collection(
             project=project,
             text=query,
-            limit=limit * 2   # 👈 مهم
+            limit=limit * 2  
         )
 
         print("===== RETRIEVED CHUNKS =====")
@@ -126,7 +126,7 @@ class NLPController(BaseController):
         if not retrieved_documents:
             return answer, full_prompt, chat_history
 
-        # 🔹 2. Keyword Filtering (general solution مش لسؤال واحد)
+        
         query_keywords = query.lower().split()
 
         filtered_documents = [
@@ -134,11 +134,11 @@ class NLPController(BaseController):
             if any(keyword in doc.text.lower() for keyword in query_keywords)
         ]
 
-        # fallback لو الفلترة فاضية
+        
         if not filtered_documents:
             filtered_documents = retrieved_documents
 
-        # 🔹 3. Ranking (الأهم فيهم)
+        
         sorted_documents = sorted(
             filtered_documents,
             key=lambda x: x.score if hasattr(x, "score") else 0,
@@ -147,7 +147,7 @@ class NLPController(BaseController):
 
         top_documents = sorted_documents[:limit]
 
-        # 🔹 4. Build prompt
+        
         documents_prompt = "\n".join([
             self.template_parser.get("rag", "document_prompt", {
                 "doc_num": idx + 1,
@@ -165,7 +165,7 @@ class NLPController(BaseController):
             }
         )
 
-        # 🔹 5. Generate answer
+      
         answer = self.generation_client.generate_text(
             prompt=full_prompt
         )
