@@ -1,47 +1,44 @@
 import os
-from string import Template
+import importlib
+
+
 class TemplateParser:
 
-    def __init__(self, language:str=None, default_language="en"):
-
+    def __init__(self, language: str = None, default_language='en'):
         self.current_path = os.path.dirname(os.path.abspath(__file__))
         self.default_language = default_language
         self.language = None
         self.set_language(language)
 
+    def set_language(self, language: str):
+        target_lang = language if language else self.default_language
 
-    def set_language(self, language:str):
-        if not language:
-            self.language = self.default_language
-        
-        language_path = os.path.join(self.current_path, "locales", language)
+        language_path = os.path.join(self.current_path, "locales", target_lang)
+
         if os.path.exists(language_path):
-            self.language = language
-
+            self.language = target_lang
         else:
             self.language = self.default_language
 
-    
-    def get(self, group: str, key: str, vars: dict={}):
+    def get(self, group: str, key: str, vars: dict = None):
+        if vars is None:
+            vars = {}
 
         if not group or not key:
             return None
-        
-        group_path = os.path.join(self.current_path, "locales", self.language, f"{group}.py")
-        targeted_language = self.language
-        if not os.path.exists(group_path):
-            group_path = os.path.join(self.current_path, "locales", self.default_language, f"{group}.py")
-            targeted_language = self.default_language
-        if not os.path.exists(group_path):
-            return None
-        
-        module = __import__(f"stores.llm.templates.locales.{targeted_language}.{group}", fromlist=[group])
-        if not module:
-            return None
-        key_attribute = getattr(module, key)
-        if hasattr(key_attribute, 'template'): 
-            template_text = key_attribute.template
-        else:
-            template_text = key_attribute
-        return Template(str(template_text)).substitute(vars)
 
+        try:
+            # ✅ import correct module way
+            module_path = f"stores.llm.templates.locales.{self.language}.{group}"
+            module = importlib.import_module(module_path)
+
+            template_obj = getattr(module, key, None)
+
+            if template_obj is None:
+                return None
+
+            return template_obj.safe_substitute(vars)
+
+        except Exception as e:
+            print(f"DEBUG: Template Error -> {e}")
+            return None

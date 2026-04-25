@@ -5,7 +5,7 @@ import cohere
 
 class CoHereProvider(LLMInterface):
     
-    def __init__(self, api_key: str, default_input_max_characters: int=1000, 
+    def __init__(self, api_key: str, default_input_max_characters: int=10000, 
                  default_generation_max_output_tokens: int=1000,
                  default_generation_temperature: float=0.1):
         
@@ -18,43 +18,34 @@ class CoHereProvider(LLMInterface):
         self.embedding_model_id = None
         self.embedding_size = None
         
-        # Initialize Cohere Client V2
         self.client = cohere.ClientV2(api_key=self.api_key)
         self.logger = logging.getLogger(__name__)
         self.enums = CoHereEnums
         
     def set_generation_model(self, model_id: str):
-        """Sets the model ID for text generation."""
         self.generation_model_id = model_id
                 
     def set_embedding_model(self, model_id: str, embedding_size: int):
-        """Sets the model ID and vector size for embeddings."""
         self.embedding_model_id = model_id
         self.embedding_size = embedding_size
             
     def process_text(self, text: str):
-        """Cleans and truncates input text based on character limits."""
         return text[: self.default_input_max_characters].strip()
         
     def generate_text(self, prompt: str, chat_history: list = [], max_output_tokens: int = None, temperature: float = None):
-        """Generates a response using the Cohere Chat API."""
-        if not self.client:
-            self.logger.error("Cohere client was not set")
+        if not self.client or not self.generation_model_id:
+            self.logger.error("Client or Generation Model ID not set")
             return None
             
-        # Check for generation model instead of embedding model
-        if not self.generation_model_id:
-            self.logger.error("Generation model for Cohere was not set")
-            return None
-            
-        max_output_tokens = max_output_tokens if max_output_tokens else self.default_generation_max_output_tokens
-        temperature = temperature if temperature else self.default_generation_temperature
+        max_output_tokens = max_output_tokens or self.default_generation_max_output_tokens
+        temperature = temperature or self.default_generation_temperature
             
         try:
-            # Construct the messages list for V2 Chat API
-            # chat_history should be a list of dicts: [{"role": "...", "content": "..."}]
             messages = chat_history + [self.construct_prompt(prompt, role="user")]
             
+            # Debug: Check the outgoing prompt
+            print(f"\n--- DEBUG START: Outgoing Messages ---\n{messages}\n--- DEBUG END ---\n")
+
             response = self.client.chat(
                 model=self.generation_model_id,
                 messages=messages,
@@ -62,28 +53,34 @@ class CoHereProvider(LLMInterface):
                 temperature=temperature
             )
             
+            # Debug: Check the raw response object
+            print(f"\n--- DEBUG START: Raw Cohere Response ---\n{response}\n--- DEBUG END ---\n")
+
             if not response or not response.message:
-                self.logger.error('Error while generating text with CoHere: Empty response')
+                self.logger.error("Empty response from Cohere")
                 return None
             
-            # Extract text from the first content block
-            return response.message.content[0].text
+            content = response.message.content
+            
+            if isinstance(content, list):
+                result = "".join([block.text for block in content if hasattr(block, 'text')])
+            else:
+                result = content.text if hasattr(content, 'text') else str(content)
+
+            # Debug: Check final extracted text
+            print(f"\n--- DEBUG START: Extracted Text ---\n{result}\n--- DEBUG END ---\n")
+            
+            return result
             
         except Exception as e:
             self.logger.error(f"CoHere Generation Error: {str(e)}")
+            print(f"Exception details: {e}")
             return None
         
     def embed_text(self, text: str, document_type: str = None):
-        """Generates embeddings for a given text."""
-        if not self.client:
-            self.logger.error("Cohere Client was not set")
+        if not self.client or not self.embedding_model_id:
             return None
             
-        if not self.embedding_model_id:
-            self.logger.error("Embedding model for CoHere was not set")
-            return None
-            
-        # Determine input type (search_query vs search_document)
         input_type = CoHereEnums.DOCUMENT.value
         if document_type == DocumentTypesEnums.QUERY.value:
             input_type = CoHereEnums.QUERY.value 
@@ -99,7 +96,6 @@ class CoHereProvider(LLMInterface):
             )
             
             if not response or not response.embeddings or not response.embeddings.float:
-                self.logger.error("Error while embedding text with CoHere")
                 return None
                 
             return response.embeddings.float[0]
@@ -109,8 +105,7 @@ class CoHereProvider(LLMInterface):
             return None
                 
     def construct_prompt(self, prompt: str, role: str):
-        """Constructs a message dictionary in the format expected by Cohere V2."""
         return {
              "role": role,
-             "content": self.process_text(prompt)
+             "content": prompt 
         }
