@@ -7,7 +7,7 @@ from langchain_community.document_loaders import TextLoader,  PyMuPDFLoader
 
 class ProcessController(BaseController):
     
-    def __init__(self, project_id:str):
+    def __init__(self, project_id: int):
         super().__init__()
         
         self.project_id = project_id
@@ -50,12 +50,12 @@ class ProcessController(BaseController):
             chunk_size=chunk_size,
             chunk_overlap=overlap_size,
             length_function=len,
-            # separators=[
-            #     "\n\n",  # paragraphs
-            #     "\n",    # lines
-            #     ". ",    # sentences
-            #     " ",     # words
-            # ]
+            separators=[
+                "\n\n",  # paragraphs
+                "\n",    # lines
+                ". ",    # sentences
+                " ",     # words
+            ]
 )
         
         file_content_texts = [

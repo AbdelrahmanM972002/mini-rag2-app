@@ -90,10 +90,10 @@ class QdrantDBProvider(VectorDBIterface):
         if record_ids is None:
             record_ids = [str(uuid.uuid4()) for _ in range(len(texts))]
 
-        # 🧠 DEBUG 1: check lengths
+        #  DEBUG 1: check lengths
         print(f"[DEBUG] texts={len(texts)}, vectors={len(vectors)}, metadata={len(metadata)}")
 
-        # 🧠 DEBUG 2: detect None vectors BEFORE batching
+        #  DEBUG 2: detect None vectors BEFORE batching
         none_vectors = [i for i, v in enumerate(vectors) if v is None]
         if none_vectors:
             print(f"[ERROR] Found None embeddings at indexes: {none_vectors}")
@@ -107,11 +107,11 @@ class QdrantDBProvider(VectorDBIterface):
             batch_vectors = vectors[i: batch_end]
             batch_record_ids = record_ids[i: batch_end]
 
-            # 🧠 DEBUG 3: batch inspection
+            #  DEBUG 3: batch inspection
             print(f"\n[DEBUG] Processing batch {i}-{batch_end}")
             print(f"[DEBUG] batch size = {len(batch_texts)}")
 
-            # 🧠 DEBUG 4: check inside batch
+            #  DEBUG 4: check inside batch
             for x in range(len(batch_texts)):
                 if batch_vectors[x] is None:
                     print(f"[ERROR] None vector in batch at index {x}")
@@ -148,25 +148,7 @@ class QdrantDBProvider(VectorDBIterface):
         return True
         
     def search_by_vector(self, collection_name: str, vector: list, limit: int = 6):
-        # if self.client is None:
-        #     self.connect()
 
-        # try:
-            
-        #     response = self.client.query_points(
-        #         collection_name=collection_name,
-        #         query=vector,
-        #         limit=limit
-        #     )
-        #     return response.points
-        # except Exception as e:
-        #     self.logger.warning(f"Fallback to traditional search due to: {e}")
-        #     return self.client.search(
-        #         collection_name=collection_name,
-        #         query_vector=vector,
-        #         limit=limit
-        #     )
-        
         results = self.client.query_points(
             collection_name=collection_name,
              query=vector,
