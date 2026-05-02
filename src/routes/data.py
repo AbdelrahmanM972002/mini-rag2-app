@@ -11,8 +11,8 @@ from models import ResponseSignal
 
 from .schemes.data import ProcessRequest
 from models.PojectModel import ProjectModel
-from models.db_schemes.data_chunk import DataChunk
-from models.db_schemes.asset import Asset
+from models.db_schemes import DataChunk, Asset
+
 from models.AssetModel import AssetModel
 from models.ChunkModel import ChunkModel
 from models.enums.AssetTtypeEnum import AssetTtypeEnum
@@ -25,10 +25,10 @@ data_router = APIRouter(
 )
 
 # =========================
-# ✅ Upload Endpoint
+#  Upload Endpoint
 # =========================
 @data_router.post("/upload/{project_id}")
-async def upload_data(request: Request, project_id: str, file: UploadFile,
+async def upload_data(request: Request, project_id: int, file: UploadFile,
                       app_settings: Settings = Depends(get_settings)):
 
     project_model = await ProjectModel.create_instance(
@@ -75,10 +75,10 @@ async def upload_data(request: Request, project_id: str, file: UploadFile,
     )
 
     asset_resource = Asset(
-        assets_project_id=project.id,
-        assets_type=AssetTtypeEnum.FILE.value,
-        assets_name=file_id,   # ← اسم الملف الفعلي
-        assets_size=os.path.getsize(file_path)
+        asset_project_id =project.project_id ,
+        asset_type=AssetTtypeEnum.FILE.value,
+        asset_name=file_id,  
+        asset_size=os.path.getsize(file_path)
     )
 
     asset_record = await asset_model.create_asset(asset=asset_resource)
@@ -86,16 +86,16 @@ async def upload_data(request: Request, project_id: str, file: UploadFile,
     return JSONResponse(
         content={
             "signal": ResponseSignal.FILE_UPLOAD_SUCCESS.value,
-            "file_id": str(asset_record.id),  # ← ObjectId
+            "file_id": str(asset_record.asset_id),  # <- ObjectId
         }
     )
 
 
 # =========================
-# ✅ Process Endpoint
+#  Process Endpoint
 # =========================
 @data_router.post("/process/{project_id}")
-async def process_endpoint(request: Request, project_id: str, process_request: ProcessRequest):
+async def process_endpoint(request: Request, project_id: int, process_request: ProcessRequest):
 
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
@@ -116,13 +116,13 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
     project_files_ids = {}
 
     # =========================
-    # ✅ Get specific file by ID
+    #  Get specific file by ID
     # =========================
     if process_request.file_id:
 
         asset_data = await asset_model.collection.find_one({
             "_id": ObjectId(process_request.file_id),
-            "assets_project_id": project.id
+            "assets_project_id": project.project_id
         })
 
         if asset_data is None:
@@ -136,20 +136,20 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
         asset_record = Asset(**asset_data)
 
         project_files_ids = {
-            asset_record.id: asset_record.assets_name
+            asset_record.asset_id: asset_record.assets_name
         }
 
     # =========================
-    # ✅ Get all files
+    #  Get all files
     # =========================
     else:
         project_files = await asset_model.get_all_project_assets(
-            assets_project_id=project.id,
+            asset_project_id=project.project_id,
             asset_type=AssetTtypeEnum.FILE.value,
         )
 
         project_files_ids = {
-            record.id: record.assets_name
+            record.asset_id : record.asset_name
             for record in project_files
         }
 
@@ -173,11 +173,11 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
     # reset chunks
     if do_reset == 1:
         await chunk_model.delete_chunk_by_project_id(
-            project_id=project.id
+            project_id=project.project_id
         )
 
     # =========================
-    # ✅ Process files
+    #  Process files
     # =========================
     for asset_id, file_id in project_files_ids.items():
 
@@ -207,7 +207,7 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
                 chunk_text=chunk.page_content,
                 chunk_metadata=chunk.metadata,
                 chunk_order=i + 1,
-                chunk_project_id=project.id,
+                chunk_project_id=project.project_id,
                 chunk_asset_id=asset_id
             )
             for i, chunk in enumerate(file_chunks)

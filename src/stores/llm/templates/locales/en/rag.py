@@ -1,48 +1,37 @@
+
+
 from string import Template
 
-#### SYSTEM ####
-system_prompt = Template(
-    "You are a helpful question answering assistant. "
-    "Use ONLY the provided context to answer. "
-    "If the answer is not found, say: "
-    "'I don't know based on the provided documents.'"
+#### RAG PROMPTS ####
+
+#### System ####
+
+system_prompt = Template("\n".join([
+    "You are an assistant to generate a response for the user.",
+    "You will be provided by a set of docuemnts associated with the user's query.",
+    "You have to generate a response based on the documents provided.",
+    "Ignore the documents that are not relevant to the user's query.",
+    "You can applogize to the user if you are not able to generate a response.",
+    "You have to generate response in the same language as the user's query.",
+    "Be polite and respectful to the user.",
+    "Be precise and concise in your response. Avoid unnecessary information.",
+    "If the answer is in a different language than the question, rewrite it before responding.",
+    
+]))
+
+#### Document ####
+document_prompt = Template(
+    "\n".join([
+        "## Document No: $doc_num",
+        "### Content: $chunk_text",
+    ])
 )
 
-#### DOCUMENT ####
-document_prompt = Template("""
-[Source $doc_num]
-
-Content:
-$chunk_text
-
----
-""")
-
-#### FOOTER ####
-footer_prompt = Template("""
-You are a Retrieval-Augmented Generation (RAG) assistant.
-
-RULES:
-- Use ONLY the provided context.
-- Do NOT use external knowledge.
-- Do NOT invent or assume information.
-- You MAY combine sentences ONLY when they describe the same idea.
-- Keep answers concise and natural.
-- Do NOT explain reasoning.
-- Do NOT repeat the question.
-
-Context:
-$documents
-
-Question:
-$question
-
-Instructions:
-- Identify the most relevant information in the context.
-- If the question asks for advantages, focus on benefit-related sentences if available.
-- If multiple relevant sentences exist, combine them into one clean answer.
-- If nothing relevant is found, respond exactly:
-  "I don't know based on the provided documents."
-
-Final Answer:
-""")
+#### Footer ####
+footer_prompt = Template("\n".join([
+    "Based only on the above documents, please generate an answer for the user.",
+    "## Question:",
+    "$query",
+    "",
+    "## Answer:",
+]))

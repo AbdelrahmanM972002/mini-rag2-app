@@ -21,11 +21,12 @@ class OpenAIProvider(LLMInterface):
 
         self.embedding_model_id = None
         self.embedding_size = None
-
+        
         self.client = OpenAI(
             api_key = self.api_key,
             base_url = self.base_url if self.base_url and len(self.base_url) else None
         )
+       
 
         self.enums = OpenAIEnums
         self.logger = logging.getLogger(__name__)
@@ -109,7 +110,7 @@ class OpenAIProvider(LLMInterface):
     def construct_prompt(self, prompt: str, role: str):
         return {
             "role": role,
-            "content": self.process_text(prompt)
+            "content": prompt
         }
     
 

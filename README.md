@@ -6,6 +6,13 @@ This is a minimal implementation of the RAG model for question answering.
 
 - Python 3.8 or later
 
+#### Install 
+
+```bash
+sudo apt update
+sudo apt install libpq-dev gcc python3-dev
+
+```
 #### Install Python using MiniConda
 
 1) Download and install MiniConda from [here](https://docs.anaconda.com/free/miniconda/#quick-command-line-install)
@@ -43,6 +50,9 @@ Set your environment Variables in the `.env` file like `OPENAI_API_KEY` value
 ```bash
 $ cd docker
 $ sudo docker compose up -d
+$ sudo docker compose up -d pgvector
+$ sudo docker compose stop mongodb
+$ docker compose down
 ``` 
 - update `.env` with your credentials S
 
