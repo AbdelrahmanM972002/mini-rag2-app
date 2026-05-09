@@ -7,47 +7,51 @@ import uuid
 from models.db_schemes import RetrievedDocument
 class QdrantDBProvider(VectorDBIterface):
     
-    def __init__(self, db_path: str, distance_method:str):
+    def __init__(self, db_client: str,  default_vecotr_size: int=786,
+                 distance_method: str = None, index_threshhold: int = 500):
         
         self.client = None
-        self.db_path = db_path
+        self.db_client = db_client
         self.distance_method = None
+        self.default_vecotr_size = default_vecotr_size
+        self.index_threshhold = index_threshhold
         
         if distance_method == DistanceMethodEnums.COSINE.value:
             self.distance_method = models.Distance.COSINE
         elif distance_method == DistanceMethodEnums.DOT.value:
             self.distance_method = models.Distance.DOT
             
-        self.logger = getLogger(__name__)
+        self.logger = getLogger("uvicorn")
         
     
-    def connect(self):
-        self.client = QdrantClient(path=self.db_path)
+    async def connect(self):
+        self.client = QdrantClient(path=self.db_client)
     
-    def disconnect(self):
+    async def disconnect(self):
         self.client = None
         
-    def is_collection_existed(self, collection_name: str) -> bool:
+    async def is_collection_existed(self, collection_name: str) -> bool:
         return self.client.collection_exists(collection_name=collection_name)
     
-    def list_all_collections(self) -> List:
+    async def list_all_collections(self) -> List:
         return self.client.get_collections()
     
-    def get_collection_info(self, collection_name: str) -> dict:
+    async def get_collection_info(self, collection_name: str) -> dict:
         return self.client.get_collection(collection_name=collection_name)
     
-    def delete_collection(self, collection_name: str):
+    async def delete_collection(self, collection_name: str):
         if self.is_collection_existed(collection_name):
+            self.logger.info(f"Deleting collection: {collection_name}")
             return self.client.delete_collection(collection_name=collection_name)
         
-    def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool = False):
+    async def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool = False):
 
         if do_reset:
             self.delete_collection(collection_name)
 
         if not self.is_collection_existed(collection_name):
-
-            self.client.create_collection(
+            self.logger.info(f"Creating new qdrant collection: {collection_name}")
+            _ = self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config=models.VectorParams(
                     size=embedding_size,
@@ -58,7 +62,7 @@ class QdrantDBProvider(VectorDBIterface):
 
         return False
     
-    def insert_one(self, collection_name:str, text:str, vector: list, metadata: dict =None, record_id: str =None):
+    async def insert_one(self, collection_name:str, text:str, vector: list, metadata: dict =None, record_id: str =None):
         
         if not self.list_all_collections(collection_name):
             self.logger.error(f"Can not insert new record to non-existed collection: {collection_name}")
@@ -80,7 +84,7 @@ class QdrantDBProvider(VectorDBIterface):
             return False
         return True
     
-    def insert_many(self, collection_name: str, texts: list, vectors: list, 
+    async def insert_many(self, collection_name: str, texts: list, vectors: list, 
                 metadata: list = None, record_ids: list = None,
                 batch_size: int = 50):
 
@@ -97,7 +101,7 @@ class QdrantDBProvider(VectorDBIterface):
         none_vectors = [i for i, v in enumerate(vectors) if v is None]
         if none_vectors:
             print(f"[ERROR] Found None embeddings at indexes: {none_vectors}")
-            raise ValueError(f"❌ {len(none_vectors)} None vectors detected before insert")
+            raise ValueError(f" {len(none_vectors)} None vectors detected before insert")
 
         for i in range(0, len(texts), batch_size):
             batch_end = i + batch_size
@@ -116,7 +120,7 @@ class QdrantDBProvider(VectorDBIterface):
                 if batch_vectors[x] is None:
                     print(f"[ERROR] None vector in batch at index {x}")
                     print(f"[TEXT] {batch_texts[x][:100]}")
-                    raise ValueError("❌ None vector found inside batch")
+                    raise ValueError(" None vector found inside batch")
 
             batch_points = [
                 models.PointStruct(
@@ -147,7 +151,7 @@ class QdrantDBProvider(VectorDBIterface):
 
         return True
         
-    def search_by_vector(self, collection_name: str, vector: list, limit: int = 6):
+    async def search_by_vector(self, collection_name: str, vector: list, limit: int = 6):
 
         results = self.client.query_points(
             collection_name=collection_name,

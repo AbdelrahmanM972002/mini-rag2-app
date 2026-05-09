@@ -2,6 +2,8 @@ from stores.llm.LLMinterface import LLMInterface
 import logging
 from ..LLMEnums import CoHereEnums, DocumentTypesEnums
 import cohere 
+from typing import List, Union
+
 
 class CoHereProvider(LLMInterface):
     
@@ -77,20 +79,23 @@ class CoHereProvider(LLMInterface):
             print(f"Exception details: {e}")
             return None
         
-    def embed_text(self, text: str, document_type: str = None):
+    def embed_text(self, text: Union[str, List[str]], document_type: str = None):
         if not self.client or not self.embedding_model_id:
             return None
+        
+        if isinstance(text, str):
+            text = [text]
             
         input_type = CoHereEnums.DOCUMENT.value
         if document_type == DocumentTypesEnums.QUERY.value:
             input_type = CoHereEnums.QUERY.value 
 
-        processed_text = self.process_text(text)   
+        # processed_text = self.process_text(text)   
         
         try:
             response = self.client.embed(
                 model=self.embedding_model_id,
-                texts=[processed_text],
+                texts=[self.process_text(t) for t in text],
                 input_type=input_type,
                 embedding_types=['float']
             )
@@ -98,7 +103,7 @@ class CoHereProvider(LLMInterface):
             if not response or not response.embeddings or not response.embeddings.float:
                 return None
                 
-            return response.embeddings.float[0]
+            return [f for f in response.embeddings.float]
             
         except Exception as e:
             self.logger.error(f"CoHere Embedding Error: {str(e)}")

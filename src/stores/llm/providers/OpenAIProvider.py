@@ -2,6 +2,8 @@ from ..LLMinterface import LLMInterface
 from ..LLMEnums import OpenAIEnums
 from openai import OpenAI
 import logging
+from typing import List, Union
+
 
 class OpenAIProvider(LLMInterface):
 
@@ -89,10 +91,13 @@ class OpenAIProvider(LLMInterface):
         return answer
 
 
-    def embed_text(self, text: str, document_type: str = None):
+    def embed_text(self, text: Union[str, List[str]], document_type: str = None):
 
         if not self.client:
             return None
+        
+        if isinstance(text, str):
+            text = [text]
 
         if not self.embedding_model_id:
             return None
@@ -104,8 +109,8 @@ class OpenAIProvider(LLMInterface):
             model=self.embedding_model_id,
             input=text
         )
-
-        return response.data[0].embedding
+        return [roc.embedding for roc in response.data]
+       
         
     def construct_prompt(self, prompt: str, role: str):
         return {

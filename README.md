@@ -63,3 +63,13 @@ $ uvicorn main:app --reload --host 0.0.0.0 --port 2002
 
 ``` 
 
+## Update python version from conda 
+
+```bash
+    conda instatll python=3.10
+```
+
+## Run Alembic Migration
+```bash 
+    $ alembic upgrade head
+```

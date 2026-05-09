@@ -21,14 +21,14 @@ class Settings(BaseSettings):
     # --- AI Backends Selection ---
     GENERATION_BACKEND: str
     EMBEDDING_BACKEND: str
-    VECTOR_DB_BACKEND: str
-    VECTOR_DB_PATH: str
+    
 
     # --- API Keys and Model IDs (Optional to avoid startup errors) ---
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_API_URL: Optional[str] = None
     COHERE_API_KEY: Optional[str] = None
 
+    GENERATION_MODEL_ID_LITERAL: List[str] = None
     GENERATION_MODEL_ID: Optional[str] = None
     EMBEDDING_MODEL_ID: Optional[str] = None
     EMBEDDING_MODEL_SIZE: Optional[int] = None
@@ -39,7 +39,11 @@ class Settings(BaseSettings):
     GENERATION_DAFAULT_TEMPERATURE: Optional[float] = 0.5
     
     # --- Vector Database Configurations ---
+    VECTOR_DB_BACKEND_LITERAL : List[str] = None
     VECTOR_DB_DISTANCE_METHOD: Optional[str] = "cosine"
+    VECTOR_DB_BACKEND: str
+    VECTOR_db_client: str
+    VECTOR_DB_PGVEC_INDEX_THERSHHOLD: int = 10000
 
     # --- Language Settings ---
     DEFAULT_LANGUAGE: str = "en"
